@@ -1,78 +1,58 @@
 import streamlit as st
 import openai
+import os
 
-# Cargar la API Key de los secretos de Streamlit
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# Cargar la API Key desde Streamlit secrets o variables de entorno
+api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY")
 
-def validar_reporte(reporte):
-    """Valida que no haya alimentos en conflicto entre patologías."""
-    reglas = [
-        ("azúcar", ["diabetes"]),
-        ("sal", ["hipertensión"]),
-        ("proteína alta", ["enfermedad renal crónica"]),
-    ]
-    errores = []
-    for alimento, patologias in reglas:
-        for patologia in patologias:
-            if patologia in reporte.lower() and alimento in reporte.lower():
-                errores.append(f"Conflicto detectado: {alimento} en pacientes con {patologia}.")
-    return errores
+if not api_key:
+    st.error("No se encontró la API Key. Asegúrate de configurarla en Streamlit secrets o como variable de entorno.")
+    st.stop()
+
+# Inicializar OpenAI
+client = openai.OpenAI(api_key=api_key)
 
 def generar_reporte(datos_usuario):
-    """Genera el reporte nutricional utilizando GPT-4o."""
-    prompt = f"""
-    Eres un nutricionista clínico experto en dietas para pacientes con diversas patologías.
-    Basado en la siguiente información del usuario:
-    
-    - Edad: {datos_usuario['edad']}
-    - Peso: {datos_usuario['peso']} kg
-    - Altura: {datos_usuario['altura']} cm
-    - Patologías: {', '.join(datos_usuario['patologias'])}
-    - Preferencias alimenticias: {datos_usuario['preferencias']}
-    
-    Sigue estas reglas al hacer recomendaciones:
-    1. Evita alimentos perjudiciales para las patologías del usuario.
-    2. Si hay conflictos entre patologías, prioriza la opción más segura.
-    3. Explica claramente el porqué de cada recomendación.
-    4. Proporciona un plan semanal detallado con desayuno, almuerzo y cena.
-    
-    Genera el reporte en un tono claro, estructurado y profesional.
-    """
-    
-    respuesta = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "system", "content": prompt}]
-    )
-    return respuesta["choices"][0]["message"]["content"]
+    """Genera un reporte basado en los datos ingresados por el usuario usando OpenAI."""
+    try:
+        prompt = f"Genera un reporte nutricional basado en los siguientes datos: {datos_usuario}"
+        
+        respuesta = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": prompt}]
+        )
+        
+        return respuesta.choices[0].message.content
 
+    except openai.OpenAIError as e:
+        st.error(f"Error al comunicarse con OpenAI: {e}")
+        return None
+
+# Interfaz en Streamlit
 def main():
-    st.title("Nutricionista Virtual Especializado")
-    st.write("Ingrese sus datos para recibir un plan nutricional personalizado.")
+    st.title("Nutricionista Virtual 🍏")
     
+    # Formulario de entrada
+    nombre = st.text_input("Nombre")
     edad = st.number_input("Edad", min_value=1, max_value=120, step=1)
-    peso = st.number_input("Peso (kg)", min_value=20.0, max_value=200.0, step=0.1)
-    altura = st.number_input("Altura (cm)", min_value=100, max_value=220, step=1)
-    patologias = st.text_area("Patologías diagnosticadas (separadas por coma)").split(",")
-    preferencias = st.text_area("Preferencias alimenticias o restricciones")
+    altura = st.number_input("Altura (cm)", min_value=50, max_value=250, step=1)
+    peso = st.number_input("Peso (kg)", min_value=10, max_value=300, step=1)
+    objetivo = st.selectbox("Objetivo", ["Pérdida de peso", "Mantenimiento", "Ganancia muscular"])
     
     if st.button("Generar Reporte"):
         datos_usuario = {
+            "nombre": nombre,
             "edad": edad,
-            "peso": peso,
             "altura": altura,
-            "patologias": [p.strip().lower() for p in patologias],
-            "preferencias": preferencias
+            "peso": peso,
+            "objetivo": objetivo
         }
-        reporte = generar_reporte(datos_usuario)
-        errores = validar_reporte(reporte)
         
-        if errores:
-            st.error("Se detectaron posibles errores en el reporte:")
-            for error in errores:
-                st.write(f"- {error}")
-        else:
-            st.success("Reporte generado con éxito")
-            st.text_area("Reporte Nutricional", reporte, height=300)
-            
+        reporte = generar_reporte(datos_usuario)
+        
+        if reporte:
+            st.subheader("Tu Reporte Nutricional 📄")
+            st.write(reporte)
+
 if __name__ == "__main__":
     main()
