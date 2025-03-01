@@ -91,9 +91,16 @@ def generar_reporte(datos_usuario):
     - Nivel de actividad: {datos_usuario['actividad']}
     - Patologías: {datos_usuario['patologias']}
     - Restricciones alimenticias: {datos_usuario['restricciones']}
-    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos.
-    """
     
+    **Análisis de las patologías:**
+    - Realiza un análisis detallado de las patologías que el usuario presenta.
+    - Proporciona recomendaciones nutricionales personalizadas considerando cada patología.
+    - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
+    - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
+
+    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
+    """
+
     respuesta = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system", "content": prompt}]
