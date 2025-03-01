@@ -1,112 +1,129 @@
 import streamlit as st
 import openai
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from fpdf import FPDF
-import time
 
-# Set your OpenAI API key here
-openai.api_key = 'your-openai-api-key'
+# Configurar la API key de OpenAI desde secrets
+oai_key = st.secrets["OPENAI_API_KEY"]
+client = openai.OpenAI(api_key=oai_key)
 
-# Function to generate PDF using ReportLab
-def generate_report_with_reportlab(user_data):
-    file_path = "/tmp/report.pdf"  # Temporary location to save the PDF
-    c = canvas.Canvas(file_path, pagesize=letter)
+# Configuración de la página
+st.set_page_config(page_title="Nutricionista Virtual", layout="wide")
 
-    c.drawString(100, 750, "Reporte Nutricional")
-    c.drawString(100, 730, f"Nombre: {user_data['name']}")
-    c.drawString(100, 710, f"Edad: {user_data['age']}")
-    c.drawString(100, 690, f"Peso: {user_data['weight']} kg")
-    c.drawString(100, 670, f"Altura: {user_data['height']} cm")
+# Estilos CSS personalizados para una apariencia premium
+st.markdown(
+    """
+    <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #1E1E1E;  /* Fondo negro mate */
+        color: #F4F4F4;  /* Texto claro */
+    }
+    .report-container {
+        background-color: #2A2A2A;  /* Fondo gris oscuro */
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        color: #F4F4F4;  /* Texto claro */
+        font-size: 18px;
+    }
+    .stTextInput, .stNumberInput, .stTextArea {
+        border-radius: 10px;
+        background-color: #333333;  /* Fondo oscuro para inputs */
+        color: #F4F4F4;  /* Texto claro */
+        border: 1px solid #444444;  /* Borde oscuro */
+    }
+    .stButton>button {
+        background-color: #FFD700;  /* Dorado */
+        color: #1E1E1E;  /* Texto oscuro */
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 10px 20px;
+        border: none;
+    }
+    .stButton>button:hover {
+        background-color: #FFB800;  /* Dorado más claro al pasar el mouse */
+    }
+    .sidebar .sidebar-content {
+        background-color: #1E1E1E;  /* Fondo oscuro en el sidebar */
+        color: #F4F4F4;  /* Texto claro */
+        padding: 10px;
+    }
+    .sidebar .sidebar-header {
+        font-size: 18px;
+        font-weight: bold;
+        color: #FFD700;  /* Color dorado en los títulos del sidebar */
+    }
+    .stSelectbox, .stMultiselect {
+        background-color: #333333;  /* Fondo oscuro para select */
+        color: #F4F4F4;  /* Texto claro */
+        border: 1px solid #444444;  /* Borde oscuro */
+    }
+    .stMarkdown {
+        color: #F4F4F4;  /* Texto claro */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Encabezado principal
+st.title("Nutricionista Virtual")
+st.markdown("### Obtén un plan de alimentación personalizado basado en tus necesidades")
+
+# Sección de entrada de datos
+st.sidebar.header("Ingresa tu información")
+nombre = st.sidebar.text_input("Nombre")
+edad = st.sidebar.number_input("Edad", min_value=1, max_value=100, step=1)
+peso = st.sidebar.number_input("Peso (kg)", min_value=20.0, max_value=200.0, step=0.1)
+estatura = st.sidebar.number_input("Estatura (cm)", min_value=100, max_value=220, step=1)
+actividad = st.sidebar.selectbox("Nivel de actividad", ["Sedentario", "Ligero", "Moderado", "Activo", "Muy Activo"])
+patologias = st.sidebar.text_area("Patologías (separadas por coma)")
+restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por coma)")
+
+# Función para generar el reporte nutricional
+def generar_reporte(datos_usuario):
+    prompt = f"""
+    Genera un plan de alimentación personalizado para:
+    - Nombre: {datos_usuario['nombre']}
+    - Edad: {datos_usuario['edad']} años
+    - Peso: {datos_usuario['peso']} kg
+    - Estatura: {datos_usuario['estatura']} cm
+    - Nivel de actividad: {datos_usuario['actividad']}
+    - Patologías: {datos_usuario['patologias']}
+    - Restricciones alimenticias: {datos_usuario['restricciones']}
     
-    c.showPage()
-    c.save()
-    return file_path
+    **Análisis de las patologías:**
+    - Realiza un análisis detallado de las patologías que el usuario presenta.
+    - Proporciona recomendaciones nutricionales personalizadas considerando cada patología.
+    - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
+    - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
 
-# Function to generate PDF using FPDF
-def generate_report_with_fpdf(user_data):
-    pdf = FPDF()
-    pdf.add_page()
+    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
+    """
 
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Reporte Nutricional", ln=True, align='C')
-    pdf.ln(10)  # Line break
-    
-    pdf.cell(200, 10, f"Nombre: {user_data['name']}")
-    pdf.ln(10)
-    pdf.cell(200, 10, f"Edad: {user_data['age']}")
-    pdf.ln(10)
-    pdf.cell(200, 10, f"Peso: {user_data['weight']} kg")
-    pdf.ln(10)
-    pdf.cell(200, 10, f"Altura: {user_data['height']} cm")
-
-    file_path = "/tmp/report_fpdf.pdf"  # Temporary location to save the PDF
-    pdf.output(file_path)
-    return file_path
-
-# Function to call OpenAI and get a response
-def get_openai_response(prompt):
-    response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt=prompt,
-        temperature=0.7,
-        max_tokens=150
+    respuesta = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "system", "content": prompt}]
     )
-    return response.choices[0].text.strip()
+    return respuesta.choices[0].message.content
 
-# Streamlit UI
-def main():
-    st.title("Generador de Reporte Nutricional")
-    st.write("Aplicación cargada correctamente.")
-    
-    # User data input form
-    with st.form("user_data_form"):
-        name = st.text_input("Nombre")
-        age = st.number_input("Edad", min_value=0)
-        weight = st.number_input("Peso (kg)", min_value=0.0, step=0.1)
-        height = st.number_input("Altura (cm)", min_value=0)
-        
-        submit_button = st.form_submit_button("Generar Reporte")
-    
-    if submit_button:
-        # User input data dictionary
-        user_data = {
-            "name": name,
-            "age": age,
-            "weight": weight,
-            "height": height
+# Botón para generar el reporte
+if st.sidebar.button("Generar Reporte Nutricional"):
+    if nombre and edad and peso and estatura and actividad:
+        datos_usuario = {
+            "nombre": nombre,
+            "edad": edad,
+            "peso": peso,
+            "estatura": estatura,
+            "actividad": actividad,
+            "patologias": patologias,
+            "restricciones": restricciones,
         }
-
-        # Progress bar for report generation
-        progress_bar = st.progress(0)
-        progress_text = st.empty()
-
-        # Simulate report generation with incremental progress
-        for i in range(1, 101):
-            time.sleep(0.05)  # Simulating some processing time
-            progress_bar.progress(i)
-            progress_text.text(f"Generando reporte... {i}%")
         
-        # Generate PDF
-        if user_data["weight"] > 0 and user_data["height"] > 0:
-            st.write("Generando reporte con ReportLab...")
-            report_path = generate_report_with_reportlab(user_data)
-        else:
-            st.write("Generando reporte con FPDF...")
-            report_path = generate_report_with_fpdf(user_data)
-
-        # Provide the download link
-        st.write(f"Reporte generado correctamente! Puedes [descargarlo aquí]({report_path}).")
-
-        # Hide the progress bar once the report is generated
-        progress_bar.empty()
-        progress_text.empty()
-
-        # Optionally, get additional nutritional advice from OpenAI
-        prompt = f"Generar un consejo nutricional para una persona de {age} años, peso {weight} kg y altura {height} cm."
-        nutritional_advice = get_openai_response(prompt)
-        st.write("Consejo nutricional:")
-        st.write(nutritional_advice)
-
-if __name__ == "__main__":
-    main()
+        reporte = generar_reporte(datos_usuario)
+        
+        # Mostrar el reporte en una caja estilizada
+        st.markdown("## Reporte Nutricional Personalizado")
+        st.markdown(f"<div class='report-container'><p>{reporte}</p></div>", unsafe_allow_html=True)
+    else:
+        st.warning("Por favor, completa todos los campos obligatorios para generar el reporte.")
