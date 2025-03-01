@@ -8,33 +8,58 @@ client = openai.OpenAI(api_key=oai_key)
 # Configuración de la página
 st.set_page_config(page_title="Nutricionista Virtual", layout="wide")
 
-# Estilos CSS personalizados para una apariencia más deportiva y premium
+# Estilos CSS personalizados para una apariencia premium
 st.markdown(
     """
     <style>
     body {
         font-family: 'Arial', sans-serif;
-        background-color: #f4f4f4;
-        color: #333;
+        background-color: #1E1E1E;  /* Fondo negro mate */
+        color: #F4F4F4;  /* Texto claro */
     }
     .report-container {
-        background-color: white;
+        background-color: #2A2A2A;  /* Fondo gris oscuro */
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        color: #F4F4F4;  /* Texto claro */
+        font-size: 18px;
     }
     .stTextInput, .stNumberInput, .stTextArea {
-        border-radius: 5px;
+        border-radius: 10px;
+        background-color: #333333;  /* Fondo oscuro para inputs */
+        color: #F4F4F4;  /* Texto claro */
+        border: 1px solid #444444;  /* Borde oscuro */
     }
     .stButton>button {
-        background-color: #008CBA;
-        color: white;
+        background-color: #FFD700;  /* Dorado */
+        color: #1E1E1E;  /* Texto oscuro */
         font-size: 16px;
+        font-weight: bold;
         border-radius: 10px;
-        padding: 10px;
+        padding: 10px 20px;
+        border: none;
     }
     .stButton>button:hover {
-        background-color: #005F73;
+        background-color: #FFB800;  /* Dorado más claro al pasar el mouse */
+    }
+    .sidebar .sidebar-content {
+        background-color: #1E1E1E;  /* Fondo oscuro en el sidebar */
+        color: #F4F4F4;  /* Texto claro */
+        padding: 10px;
+    }
+    .sidebar .sidebar-header {
+        font-size: 18px;
+        font-weight: bold;
+        color: #FFD700;  /* Color dorado en los títulos del sidebar */
+    }
+    .stSelectbox, .stMultiselect {
+        background-color: #333333;  /* Fondo oscuro para select */
+        color: #F4F4F4;  /* Texto claro */
+        border: 1px solid #444444;  /* Borde oscuro */
+    }
+    .stMarkdown {
+        color: #F4F4F4;  /* Texto claro */
     }
     </style>
     """,
