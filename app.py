@@ -39,7 +39,7 @@ def generar_reporte(datos_usuario):
     Genera el reporte en un tono claro, estructurado y profesional.
     """
     
-    respuesta = openai.ChatCompletion.create(
+    respuesta = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system", "content": prompt}]
     )
