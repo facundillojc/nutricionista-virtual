@@ -45,23 +45,8 @@ st.markdown(
     .stButton>button:hover {
         background-color: #FFB800;  /* Dorado más claro al pasar el mouse */
     }
-    .sidebar .sidebar-content {
-        background-color: #1E1E1E;  /* Fondo oscuro en el sidebar */
-        color: #F4F4F4;  /* Texto claro */
-        padding: 10px;
-    }
-    .sidebar .sidebar-header {
-        font-size: 18px;
-        font-weight: bold;
-        color: #FFD700;  /* Color dorado en los títulos del sidebar */
-    }
-    .stSelectbox, .stMultiselect {
-        background-color: #333333;  /* Fondo oscuro para select */
-        color: #F4F4F4;  /* Texto claro */
-        border: 1px solid #444444;  /* Borde oscuro */
-    }
-    .stMarkdown {
-        color: #F4F4F4;  /* Texto claro */
+    .stProgress>div {
+        background-color: #FFD700 !important;  /* Color de barra de progreso */
     }
     </style>
     """,
@@ -93,88 +78,78 @@ def generar_reporte(datos_usuario):
     - Nivel de actividad: {datos_usuario['actividad']}
     - Patologías: {datos_usuario['patologias']}
     - Restricciones alimenticias: {datos_usuario['restricciones']}
-    
-    **Análisis de las patologías:**
-    - Realiza un análisis detallado de las patologías que el usuario presenta.
-    - Proporciona recomendaciones nutricionales personalizadas considerando cada patología.
-    - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
-    - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
-
-    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
+    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, así como analizar las patologías.
     """
-
+    
+    # Simulación de progreso mientras se genera el reporte
+    for i in range(1, 101):
+        time.sleep(0.05)  # Simula tiempo de espera
+        st.progress(i)  # Actualiza el progreso
+    
+    # Generar el reporte de OpenAI
     respuesta = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system", "content": prompt}]
     )
     return respuesta.choices[0].message.content
 
-# Función para crear el archivo PDF
-def crear_pdf(reporte, datos_usuario):
+# Función para generar el PDF estilizado
+def generar_pdf(reporte):
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
+    # Título del reporte
     pdf.set_font('Arial', 'B', 16)
-    pdf.cell(200, 10, "Reporte Nutricional Personalizado", ln=True, align='C')
+    pdf.cell(200, 10, 'Reporte Nutricional Personalizado', ln=True, align='C')
+    pdf.ln(10)
     
+    # Contenido del reporte
     pdf.set_font('Arial', '', 12)
-    pdf.ln(10)
-    pdf.cell(200, 10, f"Nombre: {datos_usuario['nombre']}", ln=True)
-    pdf.cell(200, 10, f"Edad: {datos_usuario['edad']} años", ln=True)
-    pdf.cell(200, 10, f"Peso: {datos_usuario['peso']} kg", ln=True)
-    pdf.cell(200, 10, f"Estatura: {datos_usuario['estatura']} cm", ln=True)
-    pdf.cell(200, 10, f"Nivel de actividad: {datos_usuario['actividad']}", ln=True)
-    pdf.cell(200, 10, f"Patologías: {datos_usuario['patologias']}", ln=True)
-    pdf.cell(200, 10, f"Restricciones alimenticias: {datos_usuario['restricciones']}", ln=True)
-    
-    pdf.ln(10)
     pdf.multi_cell(0, 10, reporte)
     
-    # Guardar el PDF
-    pdf_output = "reporte_nutricional.pdf"
+    # Agregar más estilo (viñetas, subrayado, etc.)
+    pdf.ln(5)
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(200, 10, 'Recomendaciones:', ln=True)
+    pdf.set_font('Arial', '', 12)
+    
+    # Ejemplo de viñetas
+    pdf.ln(5)
+    pdf.cell(10, 10, "• ", ln=False)
+    pdf.multi_cell(0, 10, "Mantener una dieta baja en azúcares para prevenir picos de glucosa.")
+    pdf.cell(10, 10, "• ", ln=False)
+    pdf.multi_cell(0, 10, "Asegúrate de consumir alimentos ricos en fibra para mejorar la digestión.")
+    
+    # Guardar el archivo PDF
+    pdf_output = "/tmp/reporte_nutricional.pdf"
     pdf.output(pdf_output)
+    
     return pdf_output
 
 # Botón para generar el reporte
 if st.sidebar.button("Generar Reporte Nutricional"):
     if nombre and edad and peso and estatura and actividad:
-        datos_usuario = {
-            "nombre": nombre,
-            "edad": edad,
-            "peso": peso,
-            "estatura": estatura,
-            "actividad": actividad,
-            "patologias": patologias,
-            "restricciones": restricciones,
-        }
+        # Mostrar la barra de progreso mientras se genera el reporte
+        with st.spinner('Generando el reporte...'):
+            datos_usuario = {
+                "nombre": nombre,
+                "edad": edad,
+                "peso": peso,
+                "estatura": estatura,
+                "actividad": actividad,
+                "patologias": patologias,
+                "restricciones": restricciones,
+            }
         
-        # Mostrar mensaje de progreso
-        progreso = st.progress(0)
-        mensaje = st.empty()
-        mensaje.markdown("Generando tu reporte, por favor espera...")
+            reporte = generar_reporte(datos_usuario)
         
-        for i in range(100):
-            progreso.progress(i + 1)
-            time.sleep(0.05)
-        
-        # Generar el reporte
-        reporte = generar_reporte(datos_usuario)
-        
-        # Crear el archivo PDF
-        pdf_path = crear_pdf(reporte, datos_usuario)
-        
-        # Mostrar el reporte en pantalla
+        # Mostrar el reporte en una caja estilizada
         st.markdown("## Reporte Nutricional Personalizado")
         st.markdown(f"<div class='report-container'><p>{reporte}</p></div>", unsafe_allow_html=True)
-        
-        # Descargar el archivo PDF automáticamente
-        with open(pdf_path, "rb") as pdf_file:
-            st.download_button(
-                label="Descargar Reporte PDF",
-                data=pdf_file,
-                file_name="reporte_nutricional.pdf",
-                mime="application/pdf"
-            )
-        
+
+        # Generar el PDF estilizado y permitir la descarga
+        pdf_file = generar_pdf(reporte)
+        st.markdown(f'<a href="data:file/pdf;base64,{pdf_file}" download="Reporte_Nutricional.pdf">Descargar el reporte en PDF</a>', unsafe_allow_html=True)
     else:
         st.warning("Por favor, completa todos los campos obligatorios para generar el reporte.")
