@@ -1,6 +1,9 @@
 import streamlit as st
 import openai
 
+# Cargar la API Key de los secretos de Streamlit
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
 def validar_reporte(reporte):
     """Valida que no haya alimentos en conflicto entre patologías."""
     reglas = [
