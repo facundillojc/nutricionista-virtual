@@ -1,9 +1,10 @@
 import streamlit as st
-import openai
+import requests
 
-# Configurar la API key de OpenAI desde secrets
-oai_key = st.secrets["OPENAI_API_KEY"]
-client = openai.OpenAI(api_key=oai_key)
+# Configurar la API key de Hugging Face desde secrets
+hf_api_key = st.secrets["HF_API_TOKEN"]
+API_URL = "https://api-inference.huggingface.co/models/mixtral/mixtral-7b-instruct-v0.1"
+HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
 st.set_page_config(page_title="Nutricionista Virtual", layout="wide")
@@ -80,7 +81,7 @@ actividad = st.sidebar.selectbox("Nivel de actividad", ["Sedentario", "Ligero", 
 patologias = st.sidebar.text_area("Patologías (separadas por coma)")
 restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por coma)")
 
-# Función para generar el reporte nutricional
+# Función para generar el reporte nutricional con Mistral-7B-Instruct
 def generar_reporte(datos_usuario):
     prompt = f"""
     Genera un plan de alimentación personalizado para:
@@ -101,11 +102,23 @@ def generar_reporte(datos_usuario):
     Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
     """
 
-    respuesta = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "system", "content": prompt}]
-    )
-    return respuesta.choices[0].message.content
+    # Llamada a la API de Hugging Face
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_length": 1000,  # Aumentado para reportes más largos
+            "temperature": 0.7,  # Controla la creatividad
+            "top_p": 0.9         # Para respuestas más coherentes
+        }
+    }
+    response = requests.post(API_URL, headers=HEADERS, json=payload)
+    
+    # Verificación de la respuesta
+    if response.status_code == 200:
+        result = response.json()
+        return result[0]["generated_text"]
+    else:
+        return f"Error al consultar el modelo: {response.status_code} - {response.text}"
 
 # Botón para generar el reporte
 if st.sidebar.button("Generar Reporte Nutricional"):
@@ -120,7 +133,8 @@ if st.sidebar.button("Generar Reporte Nutricional"):
             "restricciones": restricciones,
         }
         
-        reporte = generar_reporte(datos_usuario)
+        with st.spinner("Generando tu reporte nutricional..."):
+            reporte = generar_reporte(datos_usuario)
         
         # Mostrar el reporte en una caja estilizada
         st.markdown("## Reporte Nutricional Personalizado")
