@@ -714,4 +714,9 @@ elif st.session_state.step == 2:
             
             # Mostrar explicación del nivel de actividad seleccionado
             actividad_descripciones = {
-                "Sedentario":
+    "Sedentario": "Poca o ninguna actividad física.",
+    "Ligero": "Ejercicio ligero 1-3 veces por semana.",
+    "Moderado": "Ejercicio moderado 3-5 veces por semana.",
+    "Activo": "Ejercicio intenso 6-7 veces por semana.",
+    "Muy Activo": "Entrenamiento físico muy intenso o trabajo físico exigente."
+}
