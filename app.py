@@ -721,7 +721,7 @@ elif st.session_state.step == 2:
     "Muy Activo": "Entrenamiento físico muy intenso o trabajo físico exigente."
 }
             
-            elif st.session_state.step == 3:
+elif st.session_state.step == 3:
     with st.container():
         st.markdown("## Preferencias y Restricciones")
         restricciones = st.text_area("Restricciones alimenticias (si aplica)", value=st.session_state.user_data.get('restricciones', ''))
