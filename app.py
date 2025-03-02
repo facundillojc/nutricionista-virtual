@@ -3,7 +3,7 @@ import requests
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
-API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct"  # Nuevo modelo
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"  # Nuevo modelo
 HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
@@ -81,7 +81,7 @@ actividad = st.sidebar.selectbox("Nivel de actividad", ["Sedentario", "Ligero", 
 patologias = st.sidebar.text_area("Patologías (separadas por coma)")
 restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por coma)")
 
-# Función para generar el reporte nutricional con Llama-3.1-8B-Instruct
+# Función para generar el reporte nutricional con Flan-T5-Large
 def generar_reporte(datos_usuario):
     prompt = f"""
     Genera un plan de alimentación personalizado para:
@@ -106,7 +106,7 @@ def generar_reporte(datos_usuario):
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_length": 1000,  # Longitud máxima del reporte
+            "max_length": 500,  # Reducido porque Flan-T5-Large tiene límites más estrictos
             "temperature": 0.7,  # Controla la creatividad del modelo
             "top_p": 0.9,        # Para respuestas más enfocadas y coherentes
         }
@@ -117,9 +117,11 @@ def generar_reporte(datos_usuario):
         result = response.json()
         return result[0]["generated_text"]
     except requests.exceptions.RequestException as e:
-        # Mensaje más amigable para errores de servidor
+        # Mensaje más amigable para errores de servidor o cliente
         if response.status_code == 503:
             return "El servicio de Hugging Face está temporalmente no disponible (Error 503). Por favor, intenta de nuevo en unos minutos."
+        elif response.status_code == 400:
+            return "Error en la solicitud al modelo (Error 400). Puede que el modelo no esté disponible en la API gratuita."
         return f"Error al consultar el modelo: {response.status_code} - {str(e)}"
 
 # Botón para generar el reporte
