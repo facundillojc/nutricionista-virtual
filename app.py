@@ -96,17 +96,17 @@ def generar_reporte(datos_usuario):
     **Análisis de las patologías:**
     - Realiza un análisis detallado de las patologías que el usuario presenta.
     - Proporciona recomendaciones nutricionales personalizadas considerando cada patología.
-    - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
+    - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué (por ejemplo, evita frutas altas en fructosa como manzanas y peras si hay SIBO, pero sugiere otras fuentes de fibra soluble si es necesario).
     - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
 
-    Proporciona una dieta equilibrada y adecuada basada en los datos del usuario, con un análisis detallado de sus patologías. [/INST]
+    Proporciona una dieta equilibrada y adecuada basada en los datos del usuario, con un análisis detallado de sus patologías. Incluye un plan diario con cantidades aproximadas (ej. 1 taza, 100 g) y horarios sugeridos para cada comida. Usa un tono natural y profesional en español. [/INST]
     """
     
     # Llamada a la API de Hugging Face
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_length": 1500,        # Longitud máxima para respuestas detalladas
+            "max_length": 2000,        # Aumentado para permitir más detalle
             "temperature": 0.7,        # Balance entre creatividad y coherencia
             "top_p": 0.9,             # Para respuestas enfocadas
             "return_full_text": False  # Solo devuelve la respuesta generada
