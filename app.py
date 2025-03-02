@@ -747,7 +747,6 @@ if st.sidebar.button("Generar Reporte Nutricional"):
             "peso": peso,
             "estatura": estatura,
             "actividad": actividad,
-            "restricciones": restricciones,
         }
         
         with st.spinner("Generando tu reporte nutricional..."):
