@@ -3,7 +3,7 @@ import requests
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
-API_URL = "https://api-inference.huggingface.co/models/mixtral/mixtral-7b-instruct-v0.1"
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"  # Corrección aquí
 HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
