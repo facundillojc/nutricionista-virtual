@@ -495,9 +495,6 @@ def next_step():
 def prev_step():
     st.session_state.step -= 1
 
-def goto_step(step):
-    st.session_state.step = step
-
 # Guardar datos del usuario
 def save_user_data(key, value):
     st.session_state.user_data[key] = value
