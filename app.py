@@ -739,21 +739,10 @@ elif st.session_state.step == 4:
         st.markdown("## Generando tu Plan Nutricional")
         st.write("Presiona el botón para generar tu reporte nutricional personalizado.")
         # Botón para generar el reporte
-if st.sidebar.button("Generar Reporte Nutricional"):
-    if nombre and edad and peso and estatura and actividad:
-        datos_usuario = {
-            "nombre": nombre,
-            "edad": edad,
-            "peso": peso,
-            "estatura": estatura,
-            "actividad": actividad,
-        }
-        
+if st.sidebar.button("Generar Reporte Nutricional")
         with st.spinner("Generando tu reporte nutricional..."):
             reporte = generar_reporte(datos_usuario)
         
         # Mostrar el reporte en una caja estilizada
         st.markdown("## Reporte Nutricional Personalizado")
         st.markdown(f"<div class='report-container'><p>{reporte}</p></div>", unsafe_allow_html=True)
-    else:
-        st.warning("Por favor, completa todos los campos obligatorios para generar el reporte.")
