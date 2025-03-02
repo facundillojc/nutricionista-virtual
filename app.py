@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import pandas as pd
 import base64
+import json
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
@@ -17,38 +18,18 @@ def get_csv_download_link(df, filename="plan_nutricional.csv", text="Descargar p
     href = f'<a href="data:file/csv;base64,{b64}" download="{filename}" class="download-button">{text}</a>'
     return href
 
-# Función para generar un PDF descargable (versión simple con HTML)
-def get_pdf_download_link(html_content, filename="plan_nutricional.pdf", text="Descargar plan como PDF"):
-    # Esta es una versión simplificada, idealmente usarías una biblioteca como ReportLab o WeasyPrint
-    # Para este ejemplo, simplemente proporcionamos un enlace que instruye al usuario a imprimir como PDF
-    html = f"""
-    <div id="pdf-content" style="display:none">
-        {html_content}
-    </div>
-    <a href="#" onclick="printContent(); return false;" class="download-button">{text}</a>
-    <script>
-        function printContent() {{
-            var content = document.getElementById('pdf-content').innerHTML;
-            var printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>Plan Nutricional</title>');
-            printWindow.document.write('<style>body {{ font-family: Arial; padding: 20px; }}</style>');
-            printWindow.document.write('</head><body>');
-            printWindow.document.write(content);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-        }}
-    </script>
-    """
-    return html
+# Función para convertir el reporte a HTML descargable
+def get_html_download_link(html_content, filename="plan_nutricional.html", text="Descargar plan como HTML"):
+    b64 = base64.b64encode(html_content.encode()).decode()
+    href = f'<a href="data:text/html;base64,{b64}" download="{filename}" class="download-button">{text}</a>'
+    return href
 
 # Configuración de la página
 st.set_page_config(
     page_title="NutriPlan Premium",
     page_icon="🥗",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Mejor para móviles
 )
 
 # Estilos CSS personalizados para una apariencia premium y responsive
@@ -59,16 +40,18 @@ st.markdown(
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
     
     :root {
-        --primary: #4CAF50;
-        --primary-light: #80E884;
-        --primary-dark: #087f23;
-        --secondary: #1E4620;
-        --accent: #FFD700;
-        --background: #121212;
-        --card-bg: #1E1E1E;
-        --text-light: #FAFAFA;
-        --text-dark: #121212;
-        --border: #2A2A2A;
+        --primary: #D4AF37;         /* Dorado premium */
+        --primary-light: #F5E7A3;   /* Dorado claro */
+        --primary-dark: #A67C00;    /* Dorado oscuro */
+        --secondary: #3A3A3A;       /* Gris oscuro */
+        --accent: #BD9E39;          /* Acento dorado */
+        --background: #121212;      /* Fondo negro mate */
+        --card-bg: #1E1E1E;         /* Fondo de tarjetas */
+        --text-light: #FAFAFA;      /* Texto claro */
+        --text-dark: #121212;       /* Texto oscuro */
+        --border: #2A2A2A;          /* Bordes */
+        --success: #4CAF50;         /* Verde para éxito */
+        --info: #2196F3;            /* Azul para información */
     }
     
     body {
@@ -92,11 +75,12 @@ st.markdown(
         margin-bottom: 20px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid rgba(212, 175, 55, 0.1);  /* Borde dorado sutil */
     }
     
     .card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        box-shadow: 0 6px 25px rgba(212, 175, 55, 0.15);  /* Sombra dorada al hacer hover */
     }
     
     /* Formulario */
@@ -120,7 +104,7 @@ st.markdown(
     /* Botones */
     .stButton>button {
         background-color: var(--primary);
-        color: var(--text-light);
+        color: var(--text-dark);  /* Texto oscuro para contraste con dorado */
         font-weight: 600;
         padding: 12px 30px;
         border-radius: 30px;
@@ -134,7 +118,7 @@ st.markdown(
     
     .stButton>button:hover {
         background-color: var(--primary-light);
-        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);  /* Sombra dorada */
         transform: translateY(-2px);
     }
     
@@ -146,7 +130,7 @@ st.markdown(
     }
     
     .title-accent {
-        color: var(--accent);
+        color: var(--primary);  /* Título dorado */
         font-weight: 700;
     }
     
@@ -162,6 +146,7 @@ st.markdown(
         margin: 20px 0;
         max-height: 800px;
         overflow-y: auto;
+        border: 1px solid rgba(212, 175, 55, 0.2);  /* Borde dorado sutil */
     }
     
     .report-section {
@@ -179,11 +164,13 @@ st.markdown(
         justify-content: space-between;
         align-items: center;
         margin-bottom: 15px;
+        border-bottom: 2px solid var(--primary);  /* Línea dorada bajo encabezado */
+        padding-bottom: 10px;
     }
     
     .report-date {
         font-size: 14px;
-        color: #888;
+        color: var(--primary-light);  /* Fecha en dorado claro */
     }
     
     /* Barra lateral personalizada */
@@ -211,7 +198,7 @@ st.markdown(
     .stSelectbox>div>div>select:focus,
     .stTextArea>div>textarea:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);  /* Sombra dorada al enfocar */
     }
     
     /* Elementos de progreso */
@@ -251,6 +238,7 @@ st.markdown(
     .step.active {
         background-color: var(--primary);
         border-color: var(--primary);
+        color: var(--text-dark);  /* Texto oscuro para contraste */
     }
     
     .step.completed {
@@ -289,7 +277,7 @@ st.markdown(
     .download-button {
         display: inline-block;
         background-color: var(--primary);
-        color: var(--text-light);
+        color: var(--text-dark);  /* Texto oscuro para contraste */
         font-weight: 600;
         padding: 10px 20px;
         border-radius: 30px;
@@ -304,13 +292,182 @@ st.markdown(
     
     .download-button:hover {
         background-color: var(--primary-light);
-        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);  /* Sombra dorada */
         transform: translateY(-2px);
     }
     
     /* Progress bar custom styling */
     .stProgress > div > div > div {
+        background-color: var(--primary);  /* Barra de progreso dorada */
+    }
+    
+    /* Personalización de la barra de progreso premium */
+    .premium-progress-container {
+        background-color: rgba(30, 30, 30, 0.8);
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        position: relative;
+        margin: 20px 0;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+    
+    .premium-progress-title {
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--primary);
+    }
+    
+    .premium-progress-bar {
+        height: 20px;
+        background-color: var(--secondary);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 10px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .premium-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 100%);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+        position: relative;
+    }
+    
+    .premium-progress-fill:after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            45deg, 
+            rgba(255,255,255,0.1) 25%, 
+            transparent 25%, 
+            transparent 50%, 
+            rgba(255,255,255,0.1) 50%, 
+            rgba(255,255,255,0.1) 75%, 
+            transparent 75%, 
+            transparent
+        );
+        background-size: 20px 20px;
+        animation: move 2s linear infinite;
+        border-radius: 10px;
+    }
+    
+    @keyframes move {
+        0% {
+            background-position: 0 0;
+        }
+        100% {
+            background-position: 40px 0;
+        }
+    }
+    
+    .premium-progress-text {
+        text-align: center;
+        font-weight: 600;
+        margin-top: 5px;
+        font-size: 14px;
+    }
+    
+    .premium-progress-status {
+        font-size: 12px;
+        color: var(--primary-light);
+        text-align: center;
+        margin-top: 10px;
+        font-style: italic;
+    }
+    
+    /* Estilos para métricas personalizadas */
+    .metric-container {
+        background-color: rgba(30, 30, 30, 0.6);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 3px solid var(--primary);
+    }
+    
+    .metric-title {
+        font-size: 14px;
+        color: var(--text-light);
+        margin-bottom: 5px;
+    }
+    
+    .metric-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+    
+    .metric-subtitle {
+        font-size: 12px;
+        color: var(--primary-light);
+        margin-top: 5px;
+    }
+    
+    /* Tarjetas de información */
+    .info-card {
+        background-color: rgba(33, 150, 243, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+        border-left: 3px solid var(--info);
+    }
+    
+    /* Estilizando las pestañas del reporte */
+    .report-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
+    }
+    
+    .report-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-bottom: 3px solid transparent;
+        margin-right: 10px;
+    }
+    
+    .report-tab.active {
+        border-bottom: 3px solid var(--primary);
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    .report-tab:hover:not(.active) {
+        color: var(--primary-light);
+    }
+    
+    /* Estilizando notificaciones */
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
         background-color: var(--primary);
+        color: var(--text-dark);
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+        animation: fadeIn 0.5s, fadeOut 0.5s 4.5s;
+        opacity: 0;
+        font-weight: 500;
+    }
+    
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+    
+    @keyframes fadeOut {
+        from {opacity: 1;}
+        to {opacity: 0;}
     }
     </style>
     """,
@@ -328,6 +485,8 @@ if 'patologias_list' not in st.session_state:
     st.session_state.patologias_list = []
 if 'restricciones_list' not in st.session_state:
     st.session_state.restricciones_list = []
+if 'progress_state' not in st.session_state:
+    st.session_state.progress_state = {}
 
 # Funciones para navegación entre pasos
 def next_step():
@@ -342,87 +501,138 @@ def goto_step(step):
 # Guardar datos del usuario
 def save_user_data(key, value):
     st.session_state.user_data[key] = value
-    
+
+# Función para la barra de progreso premium personalizada
+def premium_progress_bar(progress_percent, message="Procesando...", key="default"):
+    progress_html = f"""
+    <div class="premium-progress-container">
+        <div class="premium-progress-title">Generando Plan Nutricional Premium</div>
+        <div class="premium-progress-bar">
+            <div class="premium-progress-fill" style="width: {progress_percent}%;"></div>
+        </div>
+        <div class="premium-progress-text">{progress_percent}% Completado</div>
+        <div class="premium-progress-status">{message}</div>
+    </div>
+    """
+    st.markdown(progress_html, unsafe_allow_html=True)
+
+# Función para mostrar métricas personalizadas
+def custom_metric(title, value, subtitle=None):
+    metric_html = f"""
+    <div class="metric-container">
+        <div class="metric-title">{title}</div>
+        <div class="metric-value">{value}</div>
+        {f'<div class="metric-subtitle">{subtitle}</div>' if subtitle else ''}
+    </div>
+    """
+    return metric_html
+
 # Función para generar el reporte nutricional con Mixtral-8x7B-Instruct
 def generar_reporte(datos_usuario):
+    # Definir mensajes de progreso para dar apariencia premium
+    progress_messages = [
+        "Analizando datos personales...",
+        "Evaluando perfil nutricional...",
+        "Calculando necesidades calóricas...",
+        "Analizando patologías específicas...",
+        "Evaluando restricciones alimenticias...",
+        "Consultando base de conocimiento nutricional...",
+        "Diseñando plan alimenticio personalizado...",
+        "Elaborando recomendaciones...",
+        "Optimizando el plan según tus objetivos...",
+        "Finalizando y preparando tu plan premium..."
+    ]
+    
+    # Crear el contenedor para la barra de progreso
+    progress_placeholder = st.empty()
+    
+    # Simular progreso con mensajes dinámicos
+    for i in range(0, 101, 10):
+        message_index = min(i // 10, len(progress_messages) - 1)
+        premium_progress_bar(i, progress_messages[message_index], key="reporte")
+        time.sleep(0.5)  # Simular carga para una mejor experiencia
+        progress_placeholder.empty()
+        progress_placeholder = st.empty()
+    
+    # Ahora construimos el prompt para el modelo
     prompt = f"""
-    [INST] Genera un plan de alimentación personalizado para:
+    [INST] Genera un plan de alimentación personalizado premium para:
     - Nombre: {datos_usuario['nombre']}
     - Edad: {datos_usuario['edad']} años
+    - Género: {datos_usuario.get('genero', 'No especificado')}
     - Peso: {datos_usuario['peso']} kg
     - Estatura: {datos_usuario['estatura']} cm
     - Nivel de actividad: {datos_usuario['actividad']}
+    - Objetivo principal: {datos_usuario.get('objetivo', 'No especificado')}
     - Patologías: {", ".join(datos_usuario['patologias']) if datos_usuario['patologias'] else "Ninguna"}
     - Restricciones alimenticias: {", ".join(datos_usuario['restricciones']) if datos_usuario['restricciones'] else "Ninguna"}
+    - Comentarios adicionales: {datos_usuario.get('comentarios', 'Ninguno')}
     
     Estructura tu respuesta en secciones claramente identificadas con títulos en negrita:
 
     **RESUMEN PERSONALIZADO**
     - Incluye un breve resumen personalizado llamando al usuario por su nombre.
     - Calcula y menciona el IMC y sus implicaciones.
-    - Estima las calorías diarias recomendadas según peso, altura, edad y nivel de actividad.
+    - Estima las calorías diarias recomendadas según peso, altura, edad, género y nivel de actividad.
+    - Relaciona el plan con el objetivo principal del usuario.
     
     **ANÁLISIS DE PATOLOGÍAS**
     - Si hay patologías, realiza un análisis detallado de cada una.
     - Proporciona recomendaciones nutricionales específicas para cada patología.
     - Enumera alimentos beneficiosos y perjudiciales para cada condición.
     
-    **PLAN ALIMENTICIO DIARIO**
+    **PLAN ALIMENTICIO SEMANAL**
     - Proporciona un plan de alimentación estructurado para 7 días.
-    - Para cada día incluye desayuno, media mañana, almuerzo, merienda y cena.
-    - Especifica cantidades aproximadas (ej. 1 taza, 100g) y horarios sugeridos.
+    - Para cada día incluye: desayuno, media mañana, almuerzo, merienda y cena.
+    - Especifica cantidades aproximadas (ej. 1 taza, 100g) para cada alimento.
+    - Sugiere horarios ideales para cada comida.
     - Asegúrate que cada comida sea apropiada para las patologías mencionadas.
+    - Asegúrate que el plan sea realista y fácil de seguir.
     
     **RECOMENDACIONES ADICIONALES**
-    - Incluye consejos específicos sobre hidratación.
-    - Menciona suplementos recomendados si aplica.
-    - Da consejos sobre preparación de alimentos para maximizar beneficios nutricionales.
+    - Incluye consejos sobre hidratación diaria recomendada.
+    - Si es relevante, menciona suplementos que podrían beneficiar al usuario.
+    - Da consejos sobre la preparación de alimentos para maximizar los beneficios nutricionales.
+    - Incluye recomendaciones personalizadas según el objetivo principal del usuario.
     
-    Usa un tono natural, profesional y motivador en español. Evita tecnicismos excesivos y explica cualquier término especializado. Personaliza el plan para que sea realista y fácil de seguir. [/INST]
+    Usa un tono natural, profesional y motivador en español. Evita tecnicismos excesivos y explica cualquier término especializado. El plan debe ser realista, detallado y fácil de seguir. [/INST]
     """
     
-    # Llamada a la API de Hugging Face
+    # Realizar la llamada a la API
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_length": 2500,        # Aumentado para permitir más detalle
-            "temperature": 0.7,        # Balance entre creatividad y coherencia
-            "top_p": 0.9,             # Para respuestas enfocadas
-            "return_full_text": False  # Solo devuelve la respuesta generada
+            "max_length": 2500,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "return_full_text": False
         }
     }
+    
     try:
-        # Simular carga para una mejor experiencia de usuario (opcional)
-        progress_bar = st.progress(0)
-        for i in range(101):
-            time.sleep(0.05)  # Simular procesamiento
-            progress_bar.progress(i)
-        
+        # Llamada real a la API
         response = requests.post(API_URL, headers=HEADERS, json=payload)
-        response.raise_for_status()  # Lanza una excepción si hay un error HTTP
+        response.raise_for_status()
         result = response.json()
-        progress_bar.empty()
         return result[0]["generated_text"]
     except requests.exceptions.RequestException as e:
-        progress_bar.empty()
-        # Manejo de errores con mensajes claros
+        # Manejo de errores amigable
+        error_message = "Hubo un problema al generar tu plan nutricional."
         if hasattr(response, "status_code"):
             if response.status_code == 503:
-                return "El servicio de Hugging Face está temporalmente no disponible (Error 503). Por favor, intenta de nuevo en unos minutos."
+                error_message = "Nuestro servicio de nutrición premium está experimentando alta demanda en este momento. Por favor, intenta nuevamente en unos minutos."
             elif response.status_code == 400:
-                return "Error en la solicitud al modelo (Error 400). Verifica el formato o la disponibilidad del modelo."
-            return f"Error al consultar el modelo: {response.status_code} - {str(e)}"
-        return f"Error al consultar el modelo: {str(e)}"
+                error_message = "Hubo un problema con tus datos. Por favor, verifica la información ingresada e intenta nuevamente."
+            else:
+                error_message = f"Error al generar tu plan ({response.status_code}). Por favor, intenta nuevamente o contacta a soporte."
+        return error_message
 
 # Crear la interfaz principal
-st.markdown("<h1 style='text-align: center;'><span class='title-accent'>Nutri</span>Plan Premium</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 18px; margin-bottom: 40px;'>Obtén un plan nutricional personalizado basado en tus necesidades específicas</p>", unsafe_allow_html=True)
+with st.container():
+    st.markdown("<h1 style='text-align: center;'><span class='title-accent'>Nutri</span>Plan Premium</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px; margin-bottom: 40px;'>Obtén un plan nutricional personalizado basado en tus necesidades específicas</p>", unsafe_allow_html=True)
 
 # Mostrar barra de progreso de pasos
-col1, col2, col3, col4 = st.columns(4)
-step_cols = [col1, col2, col3, col4]
-
-# Indicadores de progreso
 step_progress = st.container()
 with step_progress:
     st.markdown(
@@ -442,7 +652,7 @@ if st.session_state.step == 1:
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("## Información Personal")
-        st.markdown("Comencemos con tus datos básicos para personalizar tu plan nutricional.")
+        st.markdown("Comencemos con tus datos básicos para personalizar tu plan nutricional premium.")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -464,11 +674,15 @@ if st.session_state.step == 1:
             save_user_data('genero', genero)
             
             objetivo = st.selectbox("Objetivo principal", 
-                                  options=["Perder peso", "Mantener peso", "Ganar masa muscular", "Mejorar salud", "Mejorar rendimiento deportivo"],
-                                  index=["Perder peso", "Mantener peso", "Ganar masa muscular", "Mejorar salud", "Mejorar rendimiento deportivo"].index(st.session_state.user_data.get('objetivo', "Mejorar salud")))
+                                  options=["Perder peso", "Mantener peso", "Ganar masa muscular", "Mejorar salud general", "Controlar una condición médica", "Mejorar rendimiento deportivo"],
+                                  index=["Perder peso", "Mantener peso", "Ganar masa muscular", "Mejorar salud general", "Controlar una condición médica", "Mejorar rendimiento deportivo"].index(st.session_state.user_data.get('objetivo', "Mejorar salud general")))
             save_user_data('objetivo', objetivo)
         
-        if st.button("Siguiente"):
+        # Mostrar info adicional según el objetivo seleccionado
+        if objetivo == "Controlar una condición médica":
+            st.info("En el siguiente paso podrás indicar tus patologías específicas para personalizar al máximo tu plan nutricional.")
+        
+        if st.button("Continuar", key="btn_step1"):
             next_step()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -476,7 +690,7 @@ elif st.session_state.step == 2:
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("## Medidas y Actividad Física")
-        st.markdown("Estos datos nos ayudarán a calcular tus necesidades calóricas diarias.")
+        st.markdown("Estos datos nos ayudarán a calcular tus necesidades calóricas y adaptar el plan a tu estilo de vida.")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -500,184 +714,4 @@ elif st.session_state.step == 2:
             
             # Mostrar explicación del nivel de actividad seleccionado
             actividad_descripciones = {
-                "Sedentario": "Poco o ningún ejercicio, trabajo de oficina",
-                "Ligero": "Ejercicio ligero 1-3 días/semana",
-                "Moderado": "Ejercicio moderado 3-5 días/semana",
-                "Activo": "Ejercicio intenso 6-7 días/semana",
-                "Muy Activo": "Ejercicio muy intenso, entrenamiento físico o trabajo físico diario"
-            }
-            st.info(actividad_descripciones[actividad])
-            
-            # Mostrar IMC calculado
-            if peso and estatura:
-                imc = peso / ((estatura/100) ** 2)
-                imc_categoria = ""
-                if imc < 18.5:
-                    imc_categoria = "Bajo peso"
-                elif imc < 25:
-                    imc_categoria = "Peso normal"
-                elif imc < 30:
-                    imc_categoria = "Sobrepeso"
-                else:
-                    imc_categoria = "Obesidad"
-                
-                st.metric("IMC (Índice de Masa Corporal)", f"{imc:.1f}", f"{imc_categoria}")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Atrás"):
-                prev_step()
-        with col2:
-            if st.button("Siguiente", key="next_step_2"):
-                next_step()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-elif st.session_state.step == 3:
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("## Patologías y Restricciones")
-        st.markdown("Esta información es crucial para adaptar el plan a tus necesidades específicas.")
-        
-        # Lista de patologías comunes para sugerir
-        patologias_comunes = [
-            "Diabetes Tipo 2",
-            "Hipertensión",
-            "Colesterol alto",
-            "Hipotiroidismo",
-            "Hipertiroidismo",
-            "Celiaquía",
-            "Síndrome de intestino irritable (SII)",
-            "Reflujo gastroesofágico",
-            "Obesidad",
-            "Gota",
-            "Artritis",
-            "Osteoporosis",
-            "Anemia",
-            "Insuficiencia renal",
-            "Hígado graso"
-        ]
-        
-        # Lista de restricciones alimenticias comunes
-        restricciones_comunes = [
-            "Vegetariano",
-            "Vegano",
-            "Sin gluten",
-            "Sin lactosa",
-            "Sin azúcar",
-            "Sin frutos secos",
-            "Bajo en sodio",
-            "Bajo en carbohidratos",
-            "Kosher",
-            "Halal",
-            "Sin mariscos",
-            "Sin huevo",
-            "Sin soja",
-            "Sin maíz",
-            "FODMAP bajo"
-        ]
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### Patologías")
-            
-            # Agregar patología personalizada
-            nueva_patologia = st.text_input("Añadir patología (opcional)", key="nueva_patologia")
-            if st.button("Agregar patología") and nueva_patologia:
-                if nueva_patologia not in st.session_state.patologias_list:
-                    st.session_state.patologias_list.append(nueva_patologia)
-            
-            # Seleccionar de lista predefinida
-            patologia_seleccionada = st.selectbox("Seleccionar de lista común", 
-                                                 options=[""] + patologias_comunes,
-                                                 index=0,
-                                                 key="patologia_select")
-            if st.button("Añadir de lista") and patologia_seleccionada:
-                if patologia_seleccionada not in st.session_state.patologias_list:
-                    st.session_state.patologias_list.append(patologia_seleccionada)
-            
-            # Mostrar lista actual y permitir eliminación
-            st.markdown("#### Patologías agregadas:")
-            for i, patologia in enumerate(st.session_state.patologias_list):
-                col_p1, col_p2 = st.columns([4, 1])
-                with col_p1:
-                    st.markdown(f"{patologia}")
-                with col_p2:
-                    if st.button("❌", key=f"del_pat_{i}"):
-                        st.session_state.patologias_list.pop(i)
-                        st.experimental_rerun()
-            
-            save_user_data('patologias', st.session_state.patologias_list)
-        
-        with col2:
-            st.markdown("### Restricciones Alimenticias")
-            
-            # Agregar restricción personalizada
-            nueva_restriccion = st.text_input("Añadir restricción (opcional)", key="nueva_restriccion")
-            if st.button("Agregar restricción") and nueva_restriccion:
-                if nueva_restriccion not in st.session_state.restricciones_list:
-                    st.session_state.restricciones_list.append(nueva_restriccion)
-            
-            # Seleccionar de lista predefinida
-            restriccion_seleccionada = st.selectbox("Seleccionar de lista común", 
-                                                   options=[""] + restricciones_comunes,
-                                                   index=0,
-                                                   key="restriccion_select")
-            if st.button("Añadir de lista") and restriccion_seleccionada:
-                if restriccion_seleccionada not in st.session_state.restricciones_list:
-                    st.session_state.restricciones_list.append(restriccion_seleccionada)
-            
-            # Mostrar lista actual y permitir eliminación
-            st.markdown("#### Restricciones agregadas:")
-            for i, restriccion in enumerate(st.session_state.restricciones_list):
-                col_r1, col_r2 = st.columns([4, 1])
-                with col_r1:
-                    st.markdown(f"{restriccion}")
-                with col_r2:
-                    if st.button("❌", key=f"del_res_{i}"):
-                        st.session_state.restricciones_list.pop(i)
-                        st.experimental_rerun()
-            
-            save_user_data('restricciones', st.session_state.restricciones_list)
-        
-        # Comentarios adicionales
-        st.markdown("### Comentarios Adicionales")
-        comentarios = st.text_area("Cualquier información adicional relevante para tu plan nutricional",
-                                  value=st.session_state.user_data.get('comentarios', ''),
-                                  placeholder="Ej. Preferencias de alimentos, horarios especiales, etc.",
-                                  height=100)
-        save_user_data('comentarios', comentarios)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Atrás", key="prev_step_3"):
-                prev_step()
-        with col2:
-            if st.button("Generar Plan Nutricional"):
-                # Validar datos mínimos
-                if not st.session_state.user_data.get('nombre') or not st.session_state.user_data.get('peso') or not st.session_state.user_data.get('estatura'):
-                    st.error("Por favor completa al menos tu nombre, peso y estatura para generar el plan.")
-                else:
-                    # Generar reporte
-                    with st.spinner("Generando tu plan nutricional personalizado..."):
-                        reporte = generar_reporte(st.session_state.user_data)
-                        st.session_state.report = reporte
-                        next_step()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-elif st.session_state.step == 4:
-    with st.container():
-        if st.session_state.report:
-            # Encabezado del reporte
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.markdown("## Tu Plan Nutricional Personalizado")
-            st.markdown(f"<div class='report-header'><h3>Reporte para: {st.session_state.user_data.get('nombre', 'Usuario')}</h3><div class='report-date'>Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}</div></div>", unsafe_allow_html=True)
-            
-            # Sección de resumen de datos del usuario
-            st.markdown("### Información del usuario")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Edad", f"{st.session_state.user_data.get('edad', '-')} años")
-                st.metric("Género", st.session_state.user_data.get('genero', '-'))
-            with col2:
-                st.metric("Peso", f"{st.session_state.user_data.get('peso', '-')} kg")
+                "Sedentario":
