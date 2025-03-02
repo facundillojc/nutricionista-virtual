@@ -709,15 +709,22 @@ elif st.session_state.step == 2:
                                       value=st.session_state.user_data.get('actividad', "Moderado"))
             save_user_data('actividad', actividad)
             
-            # Mostrar explicación del nivel de actividad seleccionado
-            actividad_descripciones = {
-    "Sedentario": "Poca o ninguna actividad física.",
-    "Ligero": "Ejercicio ligero 1-3 veces por semana.",
-    "Moderado": "Ejercicio moderado 3-5 veces por semana.",
-    "Activo": "Ejercicio intenso 6-7 veces por semana.",
-    "Muy Activo": "Entrenamiento físico muy intenso o trabajo físico exigente."
-}
-            
+        # ✅ Explicación del nivel de actividad seleccionado
+        actividad_descripciones = {
+            "Sedentario": "Poca o ninguna actividad física.",
+            "Ligero": "Ejercicio ligero 1-3 veces por semana.",
+            "Moderado": "Ejercicio moderado 3-5 veces por semana.",
+            "Activo": "Ejercicio intenso 6-7 veces por semana.",
+            "Muy Activo": "Entrenamiento físico muy intenso o trabajo físico exigente."
+        }
+        st.markdown(f"**Descripción:** {actividad_descripciones[actividad]}")
+        
+        # ✅ Botón "Continuar"
+        if st.button("Continuar", key="btn_step2"):
+            next_step()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
 elif st.session_state.step == 3:
     with st.container():
         st.markdown("## Preferencias y Restricciones")
