@@ -3,7 +3,7 @@ import requests
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
-API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"  # Corrección aquí
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
 HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
@@ -84,7 +84,7 @@ restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por 
 # Función para generar el reporte nutricional con Mistral-7B-Instruct
 def generar_reporte(datos_usuario):
     prompt = f"""
-    Genera un plan de alimentación personalizado para:
+    <s>[INST] Genera un plan de alimentación personalizado para:
     - Nombre: {datos_usuario['nombre']}
     - Edad: {datos_usuario['edad']} años
     - Peso: {datos_usuario['peso']} kg
@@ -99,26 +99,28 @@ def generar_reporte(datos_usuario):
     - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
     - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
 
-    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
+    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías. [/INST]
     """
-
+    
     # Llamada a la API de Hugging Face
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_length": 1000,  # Aumentado para reportes más largos
-            "temperature": 0.7,  # Controla la creatividad
-            "top_p": 0.9         # Para respuestas más coherentes
+            "max_length": 1000,  # Longitud máxima del reporte
+            "temperature": 0.7,  # Controla la creatividad del modelo
+            "top_p": 0.9,        # Para respuestas más enfocadas y coherentes
         }
     }
-    response = requests.post(API_URL, headers=HEADERS, json=payload)
-    
-    # Verificación de la respuesta
-    if response.status_code == 200:
+    try:
+        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        response.raise_for_status()  # Lanza una excepción si hay un error HTTP
         result = response.json()
         return result[0]["generated_text"]
-    else:
-        return f"Error al consultar el modelo: {response.status_code} - {response.text}"
+    except requests.exceptions.RequestException as e:
+        # Mensaje más amigable para errores de servidor
+        if response.status_code == 503:
+            return "El servicio de Hugging Face está temporalmente no disponible (Error 503). Por favor, intenta de nuevo en unos minutos."
+        return f"Error al consultar el modelo: {response.status_code} - {str(e)}"
 
 # Botón para generar el reporte
 if st.sidebar.button("Generar Reporte Nutricional"):
