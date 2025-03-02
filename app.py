@@ -3,7 +3,7 @@ import requests
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
-API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
+API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct"  # Nuevo modelo
 HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
@@ -81,10 +81,10 @@ actividad = st.sidebar.selectbox("Nivel de actividad", ["Sedentario", "Ligero", 
 patologias = st.sidebar.text_area("Patologías (separadas por coma)")
 restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por coma)")
 
-# Función para generar el reporte nutricional con Mistral-7B-Instruct
+# Función para generar el reporte nutricional con Llama-3.1-8B-Instruct
 def generar_reporte(datos_usuario):
     prompt = f"""
-    <s>[INST] Genera un plan de alimentación personalizado para:
+    Genera un plan de alimentación personalizado para:
     - Nombre: {datos_usuario['nombre']}
     - Edad: {datos_usuario['edad']} años
     - Peso: {datos_usuario['peso']} kg
@@ -99,7 +99,7 @@ def generar_reporte(datos_usuario):
     - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
     - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
 
-    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías. [/INST]
+    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
     """
     
     # Llamada a la API de Hugging Face
