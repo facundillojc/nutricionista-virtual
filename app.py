@@ -738,12 +738,23 @@ elif st.session_state.step == 4:
     with st.container():
         st.markdown("## Generando tu Plan Nutricional")
         st.write("Presiona el botón para generar tu reporte nutricional personalizado.")
-        if st.button("Generar Reporte"):
-            st.session_state.report = "Tu plan nutricional generado aquí..."  # Simulación
+        # Botón para generar el reporte
+if st.sidebar.button("Generar Reporte Nutricional"):
+    if nombre and edad and peso and estatura and actividad:
+        datos_usuario = {
+            "nombre": nombre,
+            "edad": edad,
+            "peso": peso,
+            "estatura": estatura,
+            "actividad": actividad,
+            "restricciones": restricciones,
+        }
         
-        if st.session_state.report:
-            st.write(st.session_state.report)
-            st.download_button("Descargar Reporte", data=st.session_state.report.encode(), file_name="reporte_nutricional.txt", mime="text/plain")
+        with st.spinner("Generando tu reporte nutricional..."):
+            reporte = generar_reporte(datos_usuario)
         
-        if st.button("Volver al inicio"):
-            st.session_state.step = 1
+        # Mostrar el reporte en una caja estilizada
+        st.markdown("## Reporte Nutricional Personalizado")
+        st.markdown(f"<div class='report-container'><p>{reporte}</p></div>", unsafe_allow_html=True)
+    else:
+        st.warning("Por favor, completa todos los campos obligatorios para generar el reporte.")
