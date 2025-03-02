@@ -739,7 +739,7 @@ elif st.session_state.step == 4:
         st.markdown("## Generando tu Plan Nutricional")
         st.write("Presiona el botón para generar tu reporte nutricional personalizado.")
         # Botón para generar el reporte
-if st.sidebar.button("Generar Reporte Nutricional")
+if st.sidebar.button("Generar Reporte Nutricional"):
         with st.spinner("Generando tu reporte nutricional..."):
             reporte = generar_reporte(datos_usuario)
         
