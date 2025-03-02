@@ -3,7 +3,7 @@ import requests
 
 # Configurar la API key de Hugging Face desde secrets
 hf_api_key = st.secrets["HF_API_TOKEN"]
-API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"  # Nuevo modelo
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
 HEADERS = {"Authorization": f"Bearer {hf_api_key}"}
 
 # Configuración de la página
@@ -81,10 +81,10 @@ actividad = st.sidebar.selectbox("Nivel de actividad", ["Sedentario", "Ligero", 
 patologias = st.sidebar.text_area("Patologías (separadas por coma)")
 restricciones = st.sidebar.text_area("Restricciones alimenticias (separadas por coma)")
 
-# Función para generar el reporte nutricional con Flan-T5-Large
+# Función para generar el reporte nutricional con Mixtral-8x7B-Instruct
 def generar_reporte(datos_usuario):
     prompt = f"""
-    Genera un plan de alimentación personalizado para:
+    [INST] Genera un plan de alimentación personalizado para:
     - Nombre: {datos_usuario['nombre']}
     - Edad: {datos_usuario['edad']} años
     - Peso: {datos_usuario['peso']} kg
@@ -99,16 +99,17 @@ def generar_reporte(datos_usuario):
     - Informa sobre alimentos que deben evitarse debido a cada patología, y por qué.
     - Ofrece alternativas alimenticias que sean apropiadas para las patologías mencionadas.
 
-    Debes proporcionar una dieta equilibrada y adecuada para la persona basada en sus datos, y un análisis detallado de las patologías.
+    Proporciona una dieta equilibrada y adecuada basada en los datos del usuario, con un análisis detallado de sus patologías. [/INST]
     """
     
     # Llamada a la API de Hugging Face
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_length": 500,  # Reducido porque Flan-T5-Large tiene límites más estrictos
-            "temperature": 0.7,  # Controla la creatividad del modelo
-            "top_p": 0.9,        # Para respuestas más enfocadas y coherentes
+            "max_length": 1500,        # Longitud máxima para respuestas detalladas
+            "temperature": 0.7,        # Balance entre creatividad y coherencia
+            "top_p": 0.9,             # Para respuestas enfocadas
+            "return_full_text": False  # Solo devuelve la respuesta generada
         }
     }
     try:
@@ -117,12 +118,14 @@ def generar_reporte(datos_usuario):
         result = response.json()
         return result[0]["generated_text"]
     except requests.exceptions.RequestException as e:
-        # Mensaje más amigable para errores de servidor o cliente
-        if response.status_code == 503:
-            return "El servicio de Hugging Face está temporalmente no disponible (Error 503). Por favor, intenta de nuevo en unos minutos."
-        elif response.status_code == 400:
-            return "Error en la solicitud al modelo (Error 400). Puede que el modelo no esté disponible en la API gratuita."
-        return f"Error al consultar el modelo: {response.status_code} - {str(e)}"
+        # Manejo de errores con mensajes claros
+        if hasattr(response, "status_code"):
+            if response.status_code == 503:
+                return "El servicio de Hugging Face está temporalmente no disponible (Error 503). Por favor, intenta de nuevo en unos minutos."
+            elif response.status_code == 400:
+                return "Error en la solicitud al modelo (Error 400). Verifica el formato o la disponibilidad del modelo."
+            return f"Error al consultar el modelo: {response.status_code} - {str(e)}"
+        return f"Error al consultar el modelo: {str(e)}"
 
 # Botón para generar el reporte
 if st.sidebar.button("Generar Reporte Nutricional"):
