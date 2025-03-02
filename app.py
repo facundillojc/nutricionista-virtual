@@ -720,3 +720,26 @@ elif st.session_state.step == 2:
     "Activo": "Ejercicio intenso 6-7 veces por semana.",
     "Muy Activo": "Entrenamiento físico muy intenso o trabajo físico exigente."
 }
+            
+            elif st.session_state.step == 3:
+    with st.container():
+        st.markdown("## Preferencias y Restricciones")
+        restricciones = st.text_area("Restricciones alimenticias (si aplica)", value=st.session_state.user_data.get('restricciones', ''))
+        save_user_data('restricciones', restricciones)
+        
+        if st.button("Continuar", key="btn_step3"):
+            next_step()
+
+elif st.session_state.step == 4:
+    with st.container():
+        st.markdown("## Generando tu Plan Nutricional")
+        st.write("Presiona el botón para generar tu reporte nutricional personalizado.")
+        if st.button("Generar Reporte"):
+            st.session_state.report = "Tu plan nutricional generado aquí..."  # Simulación
+        
+        if st.session_state.report:
+            st.write(st.session_state.report)
+            st.download_button("Descargar Reporte", data=st.session_state.report.encode(), file_name="reporte_nutricional.txt", mime="text/plain")
+        
+        if st.button("Volver al inicio"):
+            st.session_state.step = 1
